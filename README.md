@@ -1,3 +1,12 @@
+# WebAssembly port with additional fixes
+
+This is a fork of [SpeedCrunch](https://heldercorreia.bitbucket.io/speedcrunch/) with some additional bug fixes and also with a port to WebAssembly.
+
+You can host it yourself (files are in the release) or you can run it from here:
+[Live SpeedCrunch](https://baltazarstudios.com/files/speedcrunch/speedcrunch.html)
+
+My changes, and the port, are described [here](https://baltazarstudios.com/porting-a-qt-project-to-webassembly-challenges-and-solutions/).
+
 # SpeedCrunch
 SpeedCrunch is a high-precision scientific calculator. It features a syntax-highlighted
 scrollable display and is designed to be fully used via keyboard. Some distinctive
