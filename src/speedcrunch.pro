@@ -1,12 +1,12 @@
 equals(QT_MAJOR_VERSION, 6) {
-    lessThan(QT_MINOR_VERSION, 7) {
-        error(Qt 6.7 or newer is required but version $$[QT_VERSION] was detected.)
+    lessThan(QT_MINOR_VERSION, 4) {
+        error(Qt 6.4 or newer is required but version $$[QT_VERSION] was detected.)
     }
 }
 
 QT += widgets
 CONFIG += c++17
-!win32-msvc*:QMAKE_CXXFLAGS += "-Wall -pedantic"
+#QMAKE_CXXFLAGS += "-Wall -pedantic"
 
 CONFIG(debug, debug|release) {
     DEFINES += EVALUATOR_DEBUG
@@ -14,7 +14,7 @@ CONFIG(debug, debug|release) {
 
 win32-g++:QMAKE_LFLAGS += -static
 
-DEFINES += SPEEDCRUNCH_VERSION=\\\"master\\\"
+DEFINES += SPEEDCRUNCH_VERSION=\\\"0.12.1\\\"
 DEFINES += QT_USE_QSTRINGBUILDER
 win32:DEFINES += _USE_MATH_DEFINES
 win32:DEFINES += _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_WARNINGS _SCL_SECURE_NO_WARNINGS
@@ -56,6 +56,7 @@ macx {
     QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.8
     QMAKE_CXXFLAGS += -std=c++17
 }
+
 
 HEADERS += core/book.h \
            core/constants.h \
@@ -110,6 +111,7 @@ HEADERS += core/book.h \
            math/quantity.h \
            math/rational.h \
            math/units.h
+
 
 SOURCES += main.cpp \
            core/book.cpp \
