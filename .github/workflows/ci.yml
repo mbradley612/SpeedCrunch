@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            name: macOS Apple Silicon
+            qt-prefix: /opt/homebrew
+          - os: macos-13
+            name: macOS Intel
+            qt-prefix: /usr/local
+          - os: ubuntu-latest
+            name: Linux
+            qt-prefix: /usr
+          - os: windows-latest
+            name: Windows
+            qt-prefix: C:/Qt
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Qt
+        if: matrix.os != 'windows-latest'
+          run: |
+            brew install qt@6 || true
+            if [ -d /opt/homebrew/opt/qt@6 ]; then
+              echo "CMAKE_PREFIX_PATH=/opt/homebrew/opt/qt@6" >> $GITHUB_ENV
+            elif [ -d /usr/local/opt/qt@6 ]; then
+              echo "CMAKE_PREFIX_PATH=/usr/local/opt/qt@6" >> $GITHUB_ENV
+            fi
+        shell: bash
+
+      - name: Install Qt on Linux
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qt6-base-dev qt6-help-dev qt6-tools-dev
+        shell: bash
+
+      - name: Install Ninja on Linux
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get install -y ninja-build
+
+      - name: Setup MSVC on Windows
+        if: matrix.os == 'windows-latest'
+        uses: jal士co/msvc-setup@v1
+          with:
+            arch: x64
+
+      - name: Configure CMake
+        env:
+          CMAKE_PREFIX_PATH: ${{ matrix.qt-prefix }}/lib/cmake
+        run: |
+          mkdir -p build
+          cd build
+          cmake ../src -G Ninja
+
+      - name: Build
+        run: cmake --build . --parallel
+
+      - name: Run tests
+        run: ctest --output-on-failure
+
+      - name: Package
+        if: matrix.os != 'windows-latest'
+        run: |
+          cmake --install . --config Release
+          cpack -G DragNDrop -C Release
+        shell: bash
+
+  build-universal:
+    needs: build
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Qt
+        run: |
+          brew install qt@6
+
+      - name: Configure CMake for universal binary
+        env:
+          CMAKE_PREFIX_PATH: /opt/homebrew/opt/qt@6
+        run: |
+          mkdir -p build
+          cd build
+          cmake ../src -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DCMAKE_OSX_DEPLOYMENT_TARGET=10.14
+
+      - name: Build
+        run: cmake --build . --parallel
+
+      - name: Create DMG
+        run: |
+          cmake --install . --config Release
+          hdiutil create -volname SpeedCrunch -srcfolder install/SpeedCrunch.app -format UDZO speedcrunch-universal.dmg
